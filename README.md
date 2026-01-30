@@ -7,16 +7,6 @@ Official code and datasets repository of paper [MDCLM: Mask Diffusion Crystal La
 
 The data used in this project is derived from **CrystaLLM**, an open-source project for crystal structure generation and modeling.
 
-- **Original repository**:  
-  https://github.com/lantunes/CrystaLLM
-
-All original CIF files and intermediate data are obtained following the official data preparation procedure described in the CrystaLLM repository.
-
----
-
-
-## Attribution
-
 If you use this dataset, please also cite or acknowledge the original **CrystaLLM** project:
 
 ```text
@@ -30,8 +20,16 @@ If you use this dataset, please also cite or acknowledge the original **CrystaLL
   year={2024},
   publisher={Nature Publishing Group UK London}
 }
-
 ```
+
+All original CIF files and intermediate data are obtained following the official data preparation procedure described in the CrystaLLM repository.
+
+---
+
+
+## Attribution
+
+
 ## Obtaining the Training Data
 
 ### Downloading the Original CIF Files
