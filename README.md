@@ -15,6 +15,25 @@ The data used in this project is derived from **CrystaLLM**, an open-source proj
 All original CIF files and intermediate data are obtained following the official data preparation procedure described in the CrystaLLM repository.
 
 ---
+
+
+## Attribution
+
+If you use this dataset, please also cite or acknowledge the original **CrystaLLM** project:
+
+```text
+@article{antunes2024crystal,
+  title={Crystal structure generation with autoregressive large language modeling},
+  author={Antunes, Luis M and Butler, Keith T and Grau-Crespo, Ricardo},
+  journal={Nature Communications},
+  volume={15},
+  number={1},
+  pages={10570},
+  year={2024},
+  publisher={Nature Publishing Group UK London}
+}
+
+```
 ## Obtaining the Training Data
 
 ### Downloading the Original CIF Files
@@ -220,10 +239,4 @@ the name of the .tar.gz file to be created, which will contain the prepared CIF 
 python bin/tar_to_pickle.py custom_cifs.tar.gz custom_cifs.pkl.gz
 ```
 
-## Attribution
-
-If you use this dataset, please also cite or acknowledge the original **CrystaLLM** project:
-
-```text
-CrystaLLM: https://github.com/lantunes/CrystaLLM
 
