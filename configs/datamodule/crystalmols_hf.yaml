@@ -1,0 +1,20 @@
+_target_: crystalmols_hf
+
+# 路径配置
+# data_dir 里应该包含 train.bin, val.bin, meta.pkl（由 CrystaLLM 的 tokenize_cifs.py 生成）
+data_dir: ${paths.data_dir}/crystalmols
+
+# dataloader 参数
+max_tokens: 2048          # 晶体 token 序列更长，需要更大 max_tokens
+max_len: 2048            # 单个样本的最大 token 长度
+num_workers: 8            # DataLoader workers 数量
+special_tokens:
+  pad_token: "[PAD]"
+  unk_token: "[UNK]"
+  bos_token: "[BOS]"
+  eos_token: "[EOS]"
+  mask_token: "[MASK]"
+
+# tokenizer 设置
+tokenizer: crystallm      # 指定使用 CrystaLLM 的 tokenizer
+vocab_file: ${paths.data_dir}/crystalmols/meta.pkl  # 用 meta.pkl 里的 vocab

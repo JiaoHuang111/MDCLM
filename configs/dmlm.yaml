@@ -1,0 +1,28 @@
+# @package _global_
+experiment:
+  name: dmlm_650m
+  description: Crystal generation with CrystaLLM tokenizer integrated into DPLM framework
+
+model:
+  type: dmlm
+  hidden_size: 512
+  num_layers: 12
+  num_heads: 8
+  dropout: 0.1
+  vocab_size: 32000   # will be inferred from tokenizer
+
+paths:
+  data_dir: "data-bin/crystalmols"
+
+datamodule:
+  batch_size: 32
+  num_workers: 8
+  data_dir: ${paths.data_dir}
+  train_file: ${paths.data_dir}/train.bin
+  val_file: ${paths.data_dir}/val.bin
+  meta_file: ${paths.data_dir}/meta.pkl
+
+train:
+  max_epochs: 100
+  gpus: 8
+  precision: 16

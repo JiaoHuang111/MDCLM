@@ -1,0 +1,178 @@
+# configs/config.yaml  (根配置)
+# 全局默认配置 —— 可在运行时用 hydra 覆盖
+
+defaults:
+  - _self_
+  - callbacks:
+      - default
+  - logger: null
+  - hydra: default
+  # 默认实验（可在命令行用 experiment=... 覆盖）
+  - experiment: dmlm/dmlm_base
+
+paths:
+  root_dir: ${oc.env:PROJECT_ROOT}
+
+  # path to data directory
+  data_dir: ${paths.root_dir}/data-bin
+
+  # path to logging directory, which is also
+  # the path to output directory, created dynamically by hydra
+  # path generation pattern is specified in `configs/hydra/default.yaml`
+  # use it to store all files generated during the run, like ckpts and metrics
+  log_dir: ${paths.root_dir}/logs/${name}
+  #log_dir: ${paths.root_dir}/byprot-tensorboard/${name}
+
+  ckpt_dir: ${paths.log_dir}/checkpoints
+
+datamodule:
+  _target_: crystalmols_hf
+
+  # 路径配置
+  # data_dir 里应该包含 train.bin, val.bin, meta.pkl（由 CrystaLLM 的 tokenize_cifs.py 生成）
+  data_dir: ${paths.data_dir}/crystalmols
+
+  # dataloader 参数
+  max_tokens: 8000          # 晶体 token 序列更长，需要更大 max_tokens
+  max_len: 2048             # 单个样本的最大 token 长度
+  num_workers: 8            # DataLoader workers 数量
+  special_tokens:
+    pad_token: "[PAD]"
+    unk_token: "[UNK]"
+    bos_token: "[BOS]"
+    eos_token: "[EOS]"
+    mask_token: "[MASK]"
+
+  # tokenizer 设置
+  tokenizer: crystallm      # 指定使用 CrystaLLM 的 tokenizer
+  vocab_file: ${paths.data_dir}/crystalmols/meta.pkl  # 用 meta.pkl 里的 vocab
+
+callbacks:
+  model_summary:
+    _target_: pytorch_lightning.callbacks.RichModelSummary
+    max_depth: 2
+
+  # rich_progress_bar:
+  #   _target_: src.utils.callbacks.BetterRichProgressBar
+  #   leave: false
+
+  model_checkpoint:
+    _target_: byprot.utils.callbacks.ModelCheckpoint
+    monitor: "val/loss" # name of the logged metric which determines when model is improving
+    mode: "min" # "max" means higher metric value is better, can be also "min"
+    save_top_k: 10 # save k best models (determined by above metric)
+    save_last: True # additionaly always save model from last epoch
+    verbose: True
+    dirpath: ${paths.ckpt_dir}
+    filename: "step_{global_step}-loss_{val/loss:.2f}"
+    auto_insert_metric_name: False
+    every_n_train_steps: 1000
+    every_n_epochs: null
+
+  early_stopping:
+    _target_: pytorch_lightning.callbacks.EarlyStopping
+    monitor: "val/loss" # name of the logged metric which determines when model is improving
+    mode: "min" # "max" means higher metric value is better, can be also "min"
+    patience: 1000 # how many validation epochs of not improving until training stops
+    min_delta: 0 # minimum change in the monitored metric needed to qualify as an improvement
+    check_on_train_epoch_end: false
+
+trainer:
+  _target_: pytorch_lightning.Trainer
+
+  accelerator: "gpu"
+  devices: "auto"
+
+  enable_progress_bar: true
+  log_every_n_steps: 10
+  val_check_interval: ${train.val_and_save_every_n_steps}
+  check_val_every_n_epoch: null
+  min_epochs: 10
+  max_epochs: 10000
+  gradient_clip_val: 0.0
+  # val_check_interval: 10
+  num_sanity_val_steps: 0
+  reload_dataloaders_every_n_epochs: 1
+  use_distributed_sampler: false
+  max_steps: 500_000
+  accumulate_grad_batches: 1
+  num_nodes: 1
+
+model:
+  _target_: dmlm
+  num_diffusion_timesteps: 500
+  gradient_ckpt: false
+  rdm_couple: false
+  lora:
+    enable: false
+    lora_rank: 16
+    lora_dropout: 0.1
+    lora_target_module: (esm.encoder.layer.[0-9]*.attention.(self.query|self.key|self.value|output.dense).*|esm.encoder.layer.[0-9]*.(intermediate|output).dense.*)
+    modules_to_save: lm_head,esm.embeddings
+  net:
+    arch_type: esm_crystal
+    name: facebook/esm2_t33_650M_UR50D
+    dropout: 0.1
+
+# ======================
+# Task Configuration
+# ======================
+task:
+  _target_: lm/dmlm
+  learning:
+    noise: random_mask # enable cmlm training with uniform random masking
+    watch_t1_t2_loss: false
+    cal_constant_loss: false
+    weight: linear
+  criterion:
+    _target_: byprot.modules.cross_entropy.RDMCrossEntropyLoss
+    label_smoothing: 0.0
+    ignore_index: 1
+  optimizer:
+    type: adamw
+    _partial_: true
+    lr: ${train.lr}
+    betas:
+      - 0.9
+      - 0.98
+    weight_decay: 0.01 # 0.0001
+  lr_scheduler:
+    type: polynomial
+    warmup_steps: 2000
+    total_steps: ${trainer.max_steps}
+    lr: ${train.lr}
+    lr_end: 1e-5
+    warmup_init_lr: 1e-07
+    power: 1
+
+# 全局模式（保留，可用于 train.py 决定额外逻辑）
+mode: crystal   # 可选值: "protein" 或 "crystal"。默认这里设为 crystal
+
+# 默认实验名称（会用于日志目录）
+name: dmlm_experiment
+
+# 训练相关默认项
+train:
+  train: True
+  test: True
+  debug: false
+  force_restart: false
+  ckpt_path: last.ckpt
+  seed: 42
+  lr: 1e-4
+  monitor: val/loss   # 用于 checkpoint/earlystop；训练脚本中 metric 名称应一致
+  mode: min
+  patience: 30
+  val_and_save_every_n_steps: null
+
+
+# Tokenizer / meta 信息（指向 CrystaLLM 的 meta.pkl）
+tokenizer:
+  type: crystallm
+  # 请把 meta.pkl 放到这个位置，或在运行时用 datamodule.meta_file 覆盖
+  meta_file: data-bin/crystalmols/meta.pkl
+  vocab_size: 371   # 从你上传的 meta.pkl 得到，后续训练 pipeline 可自动覆盖
+
+print_config: True
+ignore_warnings: True
+seed: 42 # seed for random number generators in pytorch, numpy and python.random
