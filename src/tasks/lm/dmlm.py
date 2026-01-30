@@ -1,10 +1,6 @@
 # Copyright (c) 2024 Bytedance Ltd. and/or its affiliates
 # SPDX-License-Identifier: Apache-2.0
 
-"""
-该文件定义了 DMLM（Crystal Domain Masked Language Model）的任务训练逻辑，
-整体结构与 dplm.py 基本一致，只是任务注册名和模型替换为了 DMLM。
-"""
 
 from typing import Any, Union
 
@@ -19,31 +15,20 @@ from byprot import utils
 from byprot.tasks import TaskLitModule, register_task
 from byprot.utils.config import compose_config as Cfg
 import os
-# 获取日志句柄
+
 log = utils.get_logger(__name__)
 
 
 def new_arange(x, *size):
-    """生成一个和输入张量 x 在同一设备上的范围序列张量。
-    参数:
-        x: 参考张量，用于确定设备
-        size: 指定生成的形状，如果为空，则使用 x 的 size()
-    返回:
-        [*size] 大小的 Tensor，最后一维是 arange 序列
-    """
+
     if len(size) == 0:
         size = x.size()
     return torch.arange(size[-1], device=x.device).expand(*size).contiguous()
 
 
-# ----------------------------- #
-# 任务类定义：DMLMTrainingTask
-# ----------------------------- #
-@register_task("lm/dmlm")  # 注册任务名为 lm/dmlm
+@register_task("lm/dmlm") 
 class DMLMTrainingTask(TaskLitModule):
-    """DMLM 的 Lightning 模块封装，用于训练和评估"""
 
-    # 默认配置
     _DEFAULT_CFG: DictConfig = Cfg(
         learning=Cfg(
             noise="rdm",  # ['full_mask', 'random_mask']
@@ -134,15 +119,11 @@ class DMLMTrainingTask(TaskLitModule):
             - tokens: [bsz, len], token 序列
         """
         weighting = self.hparams.learning.weight
-        # 模型计算 logits, target, loss_mask, weights
+
         logits, target, loss_mask, weights = self.model.compute_loss(
             batch, weighting=weighting
         )
-        # todo: 输出logits和target，使用decoder输出一下logits和target看看有没有什么问题
-        # print('Function Step: start decoding and saving to 0!')
-        # self.test_decode_save(logits)
-        # self.test_decode_save(target)
-        # 使用 criterion 计算损失
+
         loss, logging_output = self.criterion(
             logits,
             target,
@@ -168,22 +149,9 @@ class DMLMTrainingTask(TaskLitModule):
     def training_step(self, batch: Any, batch_idx: int):
 
         loss, logging_output = self.step(batch)
-        # print(f"Step {self.global_step}正常！")
-        # # 打印详细的 loss 信息
-        # if batch_idx % 100 == 0:
-        #     print(f"\n=== Batch {batch_idx} (Step {self.global_step}) ===")
-        #     print(f"Total Loss: {loss.item():.6f}")
+
         self.loss_accumulator.append(loss.item())
-        # 更新1000次生成一次
-        if self.global_step % 1000 == 0:
-            avg_loss = sum(self.loss_accumulator) / len(self.loss_accumulator)
-            print(f"\n=== 每1000次更新的平均Loss ===")
-            print(f"Step {self.global_step}, 最近1000个step的平均Loss: {avg_loss:.6f}")
-            print(f"样本数量: {len(self.loss_accumulator)}")
-            print("=" * 40)
-            self.test_generate(batch_idx)
-            # 重置累积器
-            self.loss_accumulator = []
+
 
         # 记录训练过程指标
         self.log("global_step", self.global_step, on_step=True, on_epoch=False, prog_bar=True)
@@ -209,7 +177,7 @@ class DMLMTrainingTask(TaskLitModule):
         decoded_seqs = self.model.tokenizer.batch_decode(samples.tolist())
         clean_seqs = [''.join(seq.split(' ')) for seq in decoded_seqs]
 
-        # 保存到文件
+
         filename = f"cif_results/generated_batch_-2.txt"
         with open(filename, 'a', encoding='utf-8') as f:
             f.write(f"=== Batch {batch_idx} 生成的序列 ===\n\n")
@@ -217,8 +185,6 @@ class DMLMTrainingTask(TaskLitModule):
                 f.write(f"序列 {i + 1} (长度: {len(seq)}):\n")
                 f.write(f"{seq}\n\n")
 
-        print(f"✅ 结果已保存到: {filename}")
-        print(f"生成样本数量: {len(clean_seqs)}")
 
     def test_generate(self, batch_idx: int):
         device = self.device  # Lightning模块有device属性
@@ -285,3 +251,4 @@ class DMLMTrainingTask(TaskLitModule):
             )
 
         super().on_validation_epoch_end()
+
