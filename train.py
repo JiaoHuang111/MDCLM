@@ -37,12 +37,11 @@ root = pyrootutils.setup_root(
     # recursively searches for `.env` in all folders starting from work dir
     dotenv=True,
 )
-# 如果自动检测不正确，手动覆盖
-if str(root) != '/data/huangjiao/dmlm':
-    root = '/data/huangjiao/dmlm'
-print(f"Project root: {root}")  # 添加这行来调试
-# print(f"Config path: {root / 'configs'}")  # 添加这行来调试
 
+if str(root) != '/XXXX/dmlm':
+    root = '/XXXX/dmlm'
+print(f"Project root: {root}")  
+# print(f"Config path: {root / 'configs'}") 
 import hydra
 from omegaconf import DictConfig
 
