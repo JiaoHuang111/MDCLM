@@ -1,9 +1,7 @@
 # MDCLM
-Official code repository of paper [MDCLM: Mask Diffusion Crystal Language Model for Crystalline Material Generation]
+Official code and datasets repository of paper [MDCLM: Mask Diffusion Crystal Language Model for Crystalline Material Generation]
 
 # Dataset Description
-
-This repository provides a processed dataset for crystal materials modeling.
 
 ## Data Source
 
