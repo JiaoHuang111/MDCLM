@@ -26,10 +26,6 @@ All original CIF files and intermediate data are obtained following the official
 
 ---
 
-
-## Attribution
-
-
 ## Obtaining the Training Data
 
 ### Downloading the Original CIF Files
