@@ -1,5 +1,5 @@
-# MDCLM
-Official code and datasets repository of paper [MDCLM: Mask Diffusion Crystal Language Model for Crystalline Material Generation]
+# RMD
+Official code and datasets repository of paper [RMD: Relaxation-Inspired Masked Diffusion Language Modeling for Crystal Generation]
 
 # Dataset Description
 
